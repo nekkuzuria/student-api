@@ -3,6 +3,7 @@ package com.example.student_backend.controller;
 import com.example.student_backend.exception.ResourceNotFoundException;
 import com.example.student_backend.model.Student;
 import com.example.student_backend.repository.StudentRepository;
+import com.example.student_backend.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,49 +15,41 @@ import java.util.List;
 @CrossOrigin
 @RequestMapping("/api/v1/students")
 public class StudentController {
-    // Attribute
     @Autowired
-    private StudentRepository studentRepository;
+    private StudentService studentService;
 
-
-    // Student REST API Method
     @GetMapping
     public List<Student> getAllStudents() {
-        return studentRepository.findAll();
+        return studentService.getAllStudents();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Student> getStudentById(@PathVariable String id) {
+        Student student = studentService.getStudentById(id);
+        return ResponseEntity.ok(student);
     }
 
     @PostMapping
     public Student createStudent(@RequestBody Student student) {
-        return studentRepository.save(student);
+        return studentService.saveStudent(student);
     }
 
-    @GetMapping("{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable long id) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not exists with id: " + id));
+    @PutMapping("/{id}")
+    public ResponseEntity<Student> updateStudent(@PathVariable String id, @RequestBody Student studentDetails) {
+        Student student = studentService.getStudentById(id);
 
-        return ResponseEntity.ok(student);
+        student.setFirstName(studentDetails.getFirstName());
+        student.setLastName(studentDetails.getLastName());
+        student.setBirthOfDate(studentDetails.getBirthOfDate());
+
+        Student updatedStudent = studentService.saveStudent(student);
+        return ResponseEntity.ok(updatedStudent);
     }
 
-    @PutMapping("{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable long id, @RequestBody Student studentDetails) {
-        Student updateStudent = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not exists with id: " + id));
-        updateStudent.setFirstName(studentDetails.getFirstName());
-        updateStudent.setLastName(studentDetails.getLastName());
-        updateStudent.setBirthOfDate(studentDetails.getBirthOfDate());
-        studentRepository.save(updateStudent);
-
-        return ResponseEntity.ok(updateStudent);
-    }
-
-    @DeleteMapping("{id}")
-    public ResponseEntity<HttpStatus> deleteStudent(@PathVariable long id) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not exists with id: " + id));
-        studentRepository.delete(student);
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable String id) {
+        studentService.deleteStudent(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
